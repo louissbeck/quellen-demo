@@ -1,0 +1,5 @@
+{
+  "name": "quellen-demo",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

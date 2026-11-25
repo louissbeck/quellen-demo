@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quellen-Demo</title>
+<style>
+  :root { --bg:#f6f5f1; --karte:#fff; --text:#1d1d1b; --leise:#6b6b66; --akzent:#2f5d50; --rand:#dedcd5; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:16px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--text); }
+  main { max-width:640px; margin:48px auto; padding:0 16px; }
+  .karte { background:var(--karte); border:1px solid var(--rand); border-radius:12px; padding:24px; }
+  h1 { font-size:22px; margin:0 0 4px; } p.leise { color:var(--leise); margin:0 0 20px; }
+  label { display:block; font-size:14px; margin:12px 0 4px; }
+  input, textarea { width:100%; padding:10px; border:1px solid var(--rand); border-radius:8px; font:inherit; }
+  textarea { min-height:140px; }
+  button { margin-top:16px; padding:10px 18px; border:0; border-radius:8px; background:var(--akzent); color:#fff; font:inherit; cursor:pointer; }
+  .fehler { color:#a33; font-size:14px; margin-top:10px; min-height:20px; }
+  .antwort { margin-top:20px; padding:14px; border-left:3px solid var(--akzent); background:#f1f5f3; }
+  .zitat { font-size:13px; color:var(--leise); }
+  [hidden] { display:none; }
+</style>
+</head>
+<body>
+<main>
+  <section id="anmeldung" class="karte">
+    <h1>Quellen-Demo</h1>
+    <p class="leise">Bitte anmelden.</p>
+    <form id="anmeldeformular">
+      <label for="benutzer">Benutzer</label>
+      <input id="benutzer" name="benutzer" autocomplete="username" required>
+      <label for="passwort">Passwort</label>
+      <input id="passwort" name="passwort" type="password" autocomplete="current-password" required>
+      <button type="submit">Anmelden</button>
+      <div class="fehler" id="anmeldefehler" role="alert"></div>
+    </form>
+  </section>
+
+  <section id="app" class="karte" hidden>
+    <h1>Fragen an deine Quelle</h1>
+    <p class="leise">Text einfügen, Frage stellen. Die Antwort nennt den Abschnitt, aus dem sie stammt.</p>
+    <label for="quelle">Quelle</label>
+    <textarea id="quelle">Der Mond ist 384.400 km entfernt.
+
+Buzz Aldrin betrat 1969 als zweiter Mensch den Mond.
+
+Mars hat zwei Monde.</textarea>
+    <label for="frage">Frage</label>
+    <input id="frage" placeholder="Wann war Aldrin auf dem Mond?">
+    <button id="fragen">Fragen</button>
+    <button id="abmelden" style="background:#888">Abmelden</button>
+    <div id="antwort" class="antwort" hidden></div>
+  </section>
+</main>
+<script src="suche.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  function zeigen(angemeldet) { $('anmeldung').hidden = angemeldet; $('app').hidden = !angemeldet; }
+  zeigen(sessionStorage.getItem('angemeldet') === '1');
+
+  $('anmeldeformular').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (Quellen.anmeldungPruefen($('benutzer').value.trim(), $('passwort').value)) {
+      sessionStorage.setItem('angemeldet', '1'); $('anmeldefehler').textContent = ''; zeigen(true);
+    } else {
+      $('anmeldefehler').textContent = 'Benutzer oder Passwort falsch.';
+    }
+  });
+  $('abmelden').addEventListener('click', () => { sessionStorage.removeItem('angemeldet'); zeigen(false); });
+  $('fragen').addEventListener('click', () => {
+    const r = Quellen.antworten($('frage').value, $('quelle').value);
+    const box = $('antwort'); box.hidden = false; box.textContent = '';
+    if (!r.treffer) { box.textContent = r.grund + '.'; return; }
+    const t = document.createElement('div'); t.textContent = r.treffer.text;
+    const z = document.createElement('div'); z.className = 'zitat'; z.textContent = 'Quelle: Abschnitt ' + r.treffer.nr;
+    box.append(t, z);
+  });
+</script>
+</body>
+</html>
